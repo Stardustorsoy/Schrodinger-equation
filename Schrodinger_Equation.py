@@ -47,7 +47,7 @@ for i in range(1, 1999):
 
 print(psi[-1])
 
-psi = psi * np.exp(-r / 3.0)
+
 
 grid_line = np.linspace(-10,10,100);
 X, Y, Z = np.meshgrid(grid_line, grid_line, grid_line)
@@ -79,52 +79,3 @@ psi_3D = psi_1D * sphe_Har
 
 probabilty_density = np.abs(psi_3D) ** 2.0
 
-
-
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
-# 1. Flatten our 3D grid matrices into 1D lists for the scatter plotter
-x_flat = X.flatten()
-y_flat = Y.flatten()
-z_flat = Z.flatten()
-prob_flat = probabilty_density.flatten()
-
-# 2. Normalize the probabilities so they scale cleanly from 0.0 to 1.0
-prob_max = np.max(prob_flat) if np.max(prob_flat) > 0 else 1.0
-prob_normalized = prob_flat / prob_max
-
-# 3. Filter out points with almost zero probability to keep the cloud sharp
-# Change 0.05 higher or lower to change how 'dense' or 'fuzzy' the cloud looks
-threshold = 0.05 
-mask = prob_normalized > threshold
-
-x_plot = x_flat[mask]
-y_plot = y_flat[mask]
-z_plot = z_flat[mask]
-colors = prob_normalized[mask]
-
-# 4. Generate the 3D Plot Window
-fig = plt.figure(figsize=(8, 8))
-ax = fig.add_subplot(111, projection='3d')
-
-# 5. Create the fuzzy dot cloud
-# 'c=colors' maps the brightness to the density, 'cmap=magma' gives a cool neon glow
-scatter = ax.scatter(x_plot, y_plot, z_plot, c=colors, cmap='magma', 
-                     s=2, alpha=0.3, edgecolors='none')
-
-# 6. Add labels and style the box
-ax.set_title(f"3D Electron Probability Cloud (l={l}, m={m})", fontsize=14)
-ax.set_xlabel("X (Bohr radii)")
-ax.set_ylabel("Y (Bohr radii)")
-ax.set_zlabel("Z (Bohr radii)")
-
-# Set visual boundaries to focus on the orbital center
-ax.set_xlim(-8, 8)
-ax.set_ylim(-8, 8)
-ax.set_zlim(-8, 8)
-
-# Add a color bar to show the density scale
-fig.colorbar(scatter, ax=ax, label="Relative Probability Density", shrink=0.5)
-
-plt.show()
