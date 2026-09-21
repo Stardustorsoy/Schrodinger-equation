@@ -44,28 +44,53 @@ r = np.linspace(0.01,20,2000)
 #To find the rotational KE, combine the formulas L^2 = l(l+1) * h-bar , L^2 / 2I , and I = mr^2 to make l(l+1) / 2r^2 (m and h-bar are 1 since atomic units are used)
 potential_energy = (-1.0/r) + ((l*(l+1))/(2.0 * r ** 2))
 
-#Set the mass equal to 1.0 electron mass
+#Set the mass equal to 1.0 electron mass since atomic units are used. This helps to simplify calculations and remove terms
 mass_e = 1.0
 
-#Set h-bar to 1.0 planck action
+#Set h-bar to 1.0 atomic unit of action for the same reason as using atomic units for the mass of an electron
 h_bar = 1.0
 
 #Calculate the step size between two adjacent points
 h = r[1] - r[0]
 
-#Create an array to store the value of the wave function at each point
+#Create an array to store the value of the wave function at each point. Fill this array with zeros initially
 psi = np.zeros(2000)
 
+#Prompt the user for their total energy value guess
 total_energy_guess = float(input("Enter an energy guess: "))
-#energy = -1/2 * n ** 2
+#You can calculate the energy using total_energy_guess = -1/2 * n ** 2
 
 #Shooting Method
+#This method requires two values of the wave function to begin. The first value of the wave function must be 0 if we start r at 0 since psi_true(r) = r * psi(r)
+#Although our first r index is 0.01 not 0, it is a close enough approximation
+#We can set out next value to 0.0001 since the schrodinger equation is linear and does not contain any exponents greater than 1 to the wave function itself
+#This 0.0001 will just scale the wave function vertically up and down and is accounted for with Born's rule stating that the total probability of finding an electron must equal exactly 100%
+#Born's rule mathematically means that the integral of the probabilty density must equal 1
 psi[1] = 0.0001
 
+#Use the shooting method and solve for all the other indexs of the wave function
 for i in range(1, 1999):
     psi[i+1] = 2 * psi[i] - psi[i-1] - h ** 2 * 2 * (total_energy_guess - potential_energy[i]) * psi[i]
 
-print(psi[-1])
+psi = psi * np.exp(-r / 3.0)
+
+#Square the wave function since that equals the probabilty density
+#Multiply by the step size as it gives you the width of the part under the curve
+#Multiply by 4 * pi * r^2 since the electron is found in a sphere
+#However if you don't get the true wave function first and you square the wave function to get the probabilty density, you have real_wave_function ^ 2 * r * 2
+#And instead of adding the r ^ 2 from the 4 pi r ^ 2, you use the r ^ 2 from the built in non real wave function instead
+total_probability = np.sum(np.abs(psi) ** 2) * h * 4.0 * np.pi
+
+#total_probabilty finds the intergral of the wrong, unscaled probabilty density and divides our unscaled psi by sqrt total_probabilty so that we get a probabilty density summation of 1.0 when we later square this wave function
+psi_normalized = psi / np.sqrt(total_probability)
+
+#Convert the wave function to the actual wave function by dividing by r
+#This is needed since the calculated wave function is psi in the equation, psi_true(r) = r * psi(r)
+#So to obtain the true radial wave function, we divide by r
+psi_normalized_true = psi_normalized / r
+
+#Print the final value of the scaled and accurate wave function. The closer to 0, the better the data
+print(psi_normalized_true[-1])
 
 
 grid_line = np.linspace(-10,10,100);
@@ -81,7 +106,7 @@ theta = np.arccos(Z / (distance + 1e-15))
 phi = np.arctan2(Y,  X)
 
 #Interpolate psi into the 3D grid
-psi_1D = np.interp(distance, r, psi)
+psi_1D = np.interp(distance, r, psi_normalized_true)
 
 #Spherical Harmonics
 if (l == 0):
@@ -94,10 +119,10 @@ elif (l == 1):
     else:
         sphe_har = -((3.0 / (8.0 * np.pi))  ** 0.5) * np.sin(theta) * np.exp(1j * phi)
 
-#OR just use sphe_har = sph_harm(m, l, phi, theta)
+#OR just use sphe_har = sph_harm_y(m, l, phi, theta)
 
 psi_3D = psi_1D * sphe_har
 
 probabilty_density = np.abs(psi_3D) ** 2.0
 
-print(psi_3D[-1])
+#3D Canvas
