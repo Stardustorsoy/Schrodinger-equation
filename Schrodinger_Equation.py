@@ -1,5 +1,9 @@
 #Import Numerical Python for high performance arrays, entire array calculations and for advance math
 import numpy as np
+#
+import matplotlib.pyplot as plt
+#
+from mpl_toolkits.mplot3d import Axes3D
 
 
 #Ask the user which sublevel they want
@@ -94,6 +98,7 @@ print(psi_normalized_true[-1])
 
 
 grid_line = np.linspace(-10,10,100);
+#Makes X, Y and Z 3D arrays to hold more values and for ease of calculations(vectorization)
 X, Y, Z = np.meshgrid(grid_line, grid_line, grid_line)
 #Solve for the distance from 0, 0, 0
 distance = np.sqrt(X ** 2 + Y ** 2 + Z ** 2)
@@ -126,3 +131,62 @@ psi_3D = psi_1D * sphe_har
 probabilty_density = np.abs(psi_3D) ** 2.0
 
 #3D Canvas
+
+#These arrays are currently multi layered 3D arrays which matplotlib cannot read
+#Flatten turns them all into long 1D arrays to allow readability
+x_flat = X.flatten()
+y_flat = Y.flatten()
+z_flat = Z.flatten()
+probabilty_density_flat = probabilty_density.flatten()
+
+#Check the 1D probabilty density array to find the maximum value
+#If the maximum value is not 0, set the probabilty_density_max to the highest value
+if np.max(probabilty_density_flat) > 0:
+    probabilty_density_max = np.max(probabilty_density_flat)
+#If the maximum value is 0 (prboabilty density cannot be negative), set the max value to 1.0
+else:
+    probabilty_density_max = 1.0
+
+#Transform the probabilty density to a scale of 0 and 1.0
+probabilty_density_norm = probabilty_density_flat / probabilty_density_max
+
+#Anything below 2% of the highest probabilty will be not shown
+threshold = 0.02
+#Stores an array of True and Falses to see if the probabilty passes the threshold value
+mask = probabilty_density_norm > threshold
+#Remove any values from the 1D arrays if they are false, meaning they are not higher than the threshold
+x_flat_final = x_flat[mask]
+y_flat_final = y_flat[mask]
+z_flat_final = z_flat[mask]
+probabilty_density_norm_final = probabilty_density_norm[mask]
+
+#Make the window 8 by 8 inches
+fig = plt.figure(figsize = (8,8))
+#Set it to 3D, allowing rotation 
+ax = fig.add_subplot(1, 1, 1, projection = '3d')
+
+#Plot points using the three 1D arrays for all values that passed
+#Link the color of each point to the its probabilty density
+#Use the magma templete, making low probabilty black, medium probabilty purple, and high probabilty white
+#Make each point 2 pixels
+#Set the transparency to 30%
+#Remove the black outline on the points
+scatter = ax.scatter(x_flat_final, y_flat_final, z_flat_final, c = probabilty_density_norm_final, cmap = 'magma', s = 2, alpha = 0.3, edgecolors = 'none')
+
+#Make a title and labels for the axes
+ax.set_title(f"3D Electron Probabilty Cloud (l = {l}, m = {m}) Visualizer", fontsize = 15)
+ax.set_xlabel("X (Bohr radii)")
+ax.set_ylabel("Y (Bohr radii)")
+ax.set_zlabel("Z (Bohr radii)")
+
+#Crop the graph to -8 to 8 Bohr radii
+ax.set_xlim(-8, 8)
+ax.set_ylim(-8, 8)
+ax.set_zlim(-8, 8)
+
+#Draw a legend scale on the right side of the window to show what the colors correspond to numerically
+#Shrink the bar to half of the vertical length of the window
+fig.colorbar(scatter, ax = ax, label = "Relative Probabilty Density", shrink = 0.5)
+
+#Show the 3D graph
+plt.show()
